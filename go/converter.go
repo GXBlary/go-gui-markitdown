@@ -40,13 +40,13 @@ func initPandoc() error {
 		return nil
 	}
 
-	return fmt.Errorf("pandoc n'a pas été trouvé (ni dans le dossier de l'application, ni dans le PATH)")
+	return fmt.Errorf("pandoc was not found (neither in the application folder nor in the PATH)")
 }
 
 // convertWithPandoc runs the resolved Pandoc tool on the specified file
 func convertWithPandoc(filePath string) (string, error) {
 	if resolvedPandocPath == "" {
-		return "", fmt.Errorf("pandoc n'est pas disponible sur ce système")
+		return "", fmt.Errorf("pandoc is not available on this system")
 	}
 
 	// Run: pandoc -t markdown <filePath>
@@ -91,7 +91,7 @@ func convertFile(filePath string) (string, error) {
 		// Formats only supported via Pandoc
 		return convertWithPandoc(filePath)
 	default:
-		return "", fmt.Errorf("format non supporté: %s", ext)
+		return "", fmt.Errorf("unsupported format: %s", ext)
 	}
 }
 

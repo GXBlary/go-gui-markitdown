@@ -12,50 +12,50 @@ import (
 
 func main() {
 	// Parse CLI arguments
-	outputDir := flag.String("out", "", "Dossier de sortie pour les fichiers convertis (obligatoire)")
+	outputDir := flag.String("out", "", "Output directory for converted files (required)")
 	flag.Parse()
 
 	files := flag.Args()
 
 	if len(files) == 0 {
-		fmt.Println("Usage: markitdown -out <dossier_sortie> <fichier1> [fichier2] ...")
+		fmt.Println("Usage: markitdown -out <output_directory> <file1> [file2] ...")
 		os.Exit(1)
 	}
 
 	if *outputDir == "" {
-		fmt.Println("Erreur: Le dossier de sortie (-out) est obligatoire.")
+		fmt.Println("Error: The output directory (-out) is required.")
 		os.Exit(1)
 	}
 
 	// Try to initialize Pandoc (if installed on macOS/Linux)
 	if err := initPandoc(); err != nil {
-		fmt.Printf("Note: Pandoc non détecté (%v). Les formats PPTX, RTF, EPUB, etc. ne seront pas supportés.\n", err)
+		fmt.Printf("Note: Pandoc not detected (%v). Formats like PPTX, RTF, EPUB, etc. will not be supported.\n", err)
 	} else {
-		fmt.Printf("Pandoc détecté à l'adresse : %s\n", resolvedPandocPath)
+		fmt.Printf("Pandoc detected at: %s\n", resolvedPandocPath)
 	}
 
 	// Create output directory if it doesn't exist
 	if err := os.MkdirAll(*outputDir, 0755); err != nil {
-		fmt.Printf("Erreur lors de la création du dossier de sortie: %v\n", err)
+		fmt.Printf("Error creating output directory: %v\n", err)
 		os.Exit(1)
 	}
 
 	// Expand directory arguments recursively
 	allFiles, err := collectFiles(files)
 	if err != nil {
-		fmt.Printf("Erreur lors de la lecture des fichiers: %v\n", err)
+		fmt.Printf("Error reading files: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Début de la conversion de %d fichier(s)...\n", len(allFiles))
+	fmt.Printf("Starting conversion of %d file(s)...\n", len(allFiles))
 	successCount := 0
 	errorCount := 0
 
 	for i, fPath := range allFiles {
-		fmt.Printf("[%d/%d] Conversion de %s...\n", i+1, len(allFiles), filepath.Base(fPath))
+		fmt.Printf("[%d/%d] Converting %s...\n", i+1, len(allFiles), filepath.Base(fPath))
 		mdContent, err := convertFile(fPath)
 		if err != nil {
-			fmt.Printf("  -> Échec: %v\n", err)
+			fmt.Printf("  -> Failed: %v\n", err)
 			errorCount++
 			continue
 		}
@@ -76,14 +76,14 @@ func main() {
 
 		err = os.WriteFile(outPath, []byte(mdContent), 0644)
 		if err != nil {
-			fmt.Printf("  -> Échec d'écriture: %v\n", err)
+			fmt.Printf("  -> Failed to write: %v\n", err)
 			errorCount++
 			continue
 		}
 
-		fmt.Printf("  -> Succès: %s\n", filepath.Base(outPath))
+		fmt.Printf("  -> Success: %s\n", filepath.Base(outPath))
 		successCount++
 	}
 
-	fmt.Printf("\nConversion terminée.\nSuccès: %d\nÉchecs/Ignorés: %d\n", successCount, errorCount)
+	fmt.Printf("\nConversion completed.\nSuccess: %d\nFailed/Ignored: %d\n", successCount, errorCount)
 }

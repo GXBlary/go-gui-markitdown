@@ -53,7 +53,7 @@ func main() {
 
 	// Locate the external Pandoc binary
 	if err := initPandoc(); err != nil {
-		log.Printf("Avertissement d'initialisation de Pandoc: %v", err)
+		log.Printf("Pandoc initialization warning: %v", err)
 	}
 
 	app := &AppUI{
@@ -67,7 +67,7 @@ func main() {
 
 	err := MainWindow{
 		AssignTo: &app.mainWindow,
-		Title:    "MarkItDown - Convertisseur",
+		Title:    "MarkItDown - Converter",
 		MinSize:  Size{Width: 700, Height: 500},
 		Layout:   VBox{Margins: Margins{Left: 10, Top: 10, Right: 10, Bottom: 10}},
 		OnDropFiles: func(files []string) {
@@ -86,14 +86,14 @@ func main() {
 				Children: []Widget{
 					PushButton{
 						AssignTo: &openFilesBtn,
-						Text:     "Ajouter Fichier(s)",
+						Text:     "Add File(s)",
 						OnClicked: func() {
 							app.addFiles()
 						},
 					},
 					PushButton{
 						AssignTo: &openDirBtn,
-						Text:     "Ajouter Dossier",
+						Text:     "Add Folder",
 						OnClicked: func() {
 							app.addDirectory()
 						},
@@ -101,7 +101,7 @@ func main() {
 					HSpacer{},
 					PushButton{
 						AssignTo: &clearBtn,
-						Text:     "Vider la liste",
+						Text:     "Clear list",
 						OnClicked: func() {
 							app.clearList()
 						},
@@ -121,14 +121,14 @@ func main() {
 				Children: []Widget{
 					PushButton{
 						AssignTo: &outDirBtn,
-						Text:     "Dossier de sortie",
+						Text:     "Output folder",
 						OnClicked: func() {
 							app.selectOutputDir()
 						},
 					},
 					Label{
 						AssignTo: &app.outputDirLabel,
-						Text:     "(Aucun dossier sélectionné)",
+						Text:     "(No folder selected)",
 					},
 				},
 			},
@@ -139,12 +139,12 @@ func main() {
 				Children: []Widget{
 					Label{
 						AssignTo: &app.statusLabel,
-						Text:     "Prêt",
+						Text:     "Ready",
 					},
 					HSpacer{},
 					PushButton{
 						AssignTo: &app.convertButton,
-						Text:     "Convertir",
+						Text:     "Convert",
 						OnClicked: func() {
 							app.startConversion()
 						},
@@ -174,8 +174,8 @@ func contains(slice []string, val string) bool {
 // addFiles shows a file selector to add files to the list
 func (app *AppUI) addFiles() {
 	dlg := &walk.FileDialog{
-		Title:  "Sélectionner des fichiers",
-		Filter: "Tous les fichiers supportés (*.docx;*.xlsx;*.pdf;*.html;*.htm;*.txt;*.md;*.pptx;*.rtf;*.epub;*.odt;*.tex;*.wiki)|*.docx;*.xlsx;*.pdf;*.html;*.htm;*.txt;*.md;*.pptx;*.rtf;*.epub;*.odt;*.tex;*.wiki|Tous les fichiers (*.*)|*.*",
+		Title:  "Select files",
+		Filter: "All supported files (*.docx;*.xlsx;*.pdf;*.html;*.htm;*.txt;*.md;*.pptx;*.rtf;*.epub;*.odt;*.tex;*.wiki)|*.docx;*.xlsx;*.pdf;*.html;*.htm;*.txt;*.md;*.pptx;*.rtf;*.epub;*.odt;*.tex;*.wiki|All files (*.*)|*.*",
 	}
 	if ok, err := dlg.ShowOpenMultiple(app.mainWindow); err != nil {
 		return
@@ -192,7 +192,7 @@ func (app *AppUI) addFiles() {
 // addDirectory shows a directory selector to add folders to the list
 func (app *AppUI) addDirectory() {
 	dlg := &walk.FileDialog{
-		Title: "Sélectionner un dossier",
+		Title: "Select a folder",
 	}
 	if ok, err := dlg.ShowBrowseFolder(app.mainWindow); err != nil {
 		return
@@ -214,7 +214,7 @@ func (app *AppUI) clearList() {
 // selectOutputDir displays a dialog to select the destination folder
 func (app *AppUI) selectOutputDir() {
 	dlg := &walk.FileDialog{
-		Title: "Sélectionner le dossier de sortie",
+		Title: "Select output folder",
 	}
 	if ok, err := dlg.ShowBrowseFolder(app.mainWindow); err != nil {
 		return
@@ -227,16 +227,16 @@ func (app *AppUI) selectOutputDir() {
 // startConversion starts the conversion process in a background goroutine
 func (app *AppUI) startConversion() {
 	if len(app.selectedPaths) == 0 {
-		walk.MsgBox(app.mainWindow, "Attention", "Veuillez sélectionner au moins un fichier ou dossier.", walk.MsgBoxIconWarning)
+		walk.MsgBox(app.mainWindow, "Warning", "Please select at least one file or folder.", walk.MsgBoxIconWarning)
 		return
 	}
 	if app.outputDir == "" {
-		walk.MsgBox(app.mainWindow, "Attention", "Veuillez sélectionner un dossier de sortie.", walk.MsgBoxIconWarning)
+		walk.MsgBox(app.mainWindow, "Warning", "Please select an output folder.", walk.MsgBoxIconWarning)
 		return
 	}
 
 	app.convertButton.SetEnabled(false)
-	app.statusLabel.SetText("Conversion en cours...")
+	app.statusLabel.SetText("Conversion in progress...")
 
 	go app.processFiles()
 }
@@ -247,18 +247,18 @@ func (app *AppUI) processFiles() {
 	allFiles, err := collectFiles(app.selectedPaths)
 	if err != nil {
 		app.mainWindow.Synchronize(func() {
-			app.statusLabel.SetText("Erreur lors de la lecture des fichiers.")
+			app.statusLabel.SetText("Error reading files.")
 			app.convertButton.SetEnabled(true)
-			walk.MsgBox(app.mainWindow, "Erreur", fmt.Sprintf("Impossible de lister les fichiers : %v", err), walk.MsgBoxIconError)
+			walk.MsgBox(app.mainWindow, "Error", fmt.Sprintf("Unable to list files: %v", err), walk.MsgBoxIconError)
 		})
 		return
 	}
 
 	if len(allFiles) == 0 {
 		app.mainWindow.Synchronize(func() {
-			app.statusLabel.SetText("Prêt")
+			app.statusLabel.SetText("Ready")
 			app.convertButton.SetEnabled(true)
-			walk.MsgBox(app.mainWindow, "Information", "Aucun fichier trouvé dans la sélection.", walk.MsgBoxIconInformation)
+			walk.MsgBox(app.mainWindow, "Information", "No files found in selection.", walk.MsgBoxIconInformation)
 		})
 		return
 	}
@@ -272,7 +272,7 @@ func (app *AppUI) processFiles() {
 		idx := i
 		fPath := filePath
 		app.mainWindow.Synchronize(func() {
-			app.statusLabel.SetText(fmt.Sprintf("Conversion %d/%d: %s", idx+1, len(allFiles), filepath.Base(fPath)))
+			app.statusLabel.SetText(fmt.Sprintf("Converting %d/%d: %s", idx+1, len(allFiles), filepath.Base(fPath)))
 		})
 
 		// Perform conversion
@@ -309,7 +309,7 @@ func (app *AppUI) processFiles() {
 
 	// Show results popup on UI thread when done
 	app.mainWindow.Synchronize(func() {
-		app.statusLabel.SetText(fmt.Sprintf("Terminé. Succès: %d, Échecs/Ignorés: %d", successCount, errorCount))
+		app.statusLabel.SetText(fmt.Sprintf("Completed. Success: %d, Failed/Ignored: %d", successCount, errorCount))
 		app.convertButton.SetEnabled(true)
 		app.showResults(successPaths, errorCount)
 	})
@@ -324,7 +324,7 @@ func openFile(path string) {
 // showResults displays a dialog with the results of the conversion
 func (app *AppUI) showResults(successPaths []string, errorCount int) {
 	if len(successPaths) == 0 {
-		walk.MsgBox(app.mainWindow, "Terminé", fmt.Sprintf("Aucun fichier n'a été converti.\nÉchecs/Ignorés: %d", errorCount), walk.MsgBoxIconInformation)
+		walk.MsgBox(app.mainWindow, "Completed", fmt.Sprintf("No files were converted.\nFailed/Ignored: %d", errorCount), walk.MsgBoxIconInformation)
 		return
 	}
 
@@ -335,12 +335,12 @@ func (app *AppUI) showResults(successPaths []string, errorCount int) {
 
 	err := Dialog{
 		AssignTo: &dlg,
-		Title:    "Résultats de la conversion",
+		Title:    "Conversion Results",
 		MinSize:  Size{Width: 600, Height: 400},
 		Layout:   VBox{Margins: Margins{Left: 10, Top: 10, Right: 10, Bottom: 10}},
 		Children: []Widget{
 			Label{
-				Text: fmt.Sprintf("Conversion terminée (Succès: %d, Échecs: %d).\nDouble-cliquez sur un fichier ci-dessous pour l'ouvrir :", len(successPaths), errorCount),
+				Text: fmt.Sprintf("Conversion completed (Success: %d, Failed: %d).\nDouble-click a file below to open it:", len(successPaths), errorCount),
 			},
 			ListBox{
 				AssignTo: &listbox,
@@ -354,7 +354,7 @@ func (app *AppUI) showResults(successPaths []string, errorCount int) {
 				},
 			},
 			PushButton{
-				Text: "Fermer",
+				Text: "Close",
 				OnClicked: func() {
 					dlg.Accept()
 				},

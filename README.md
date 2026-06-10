@@ -73,9 +73,9 @@ go build -o ../markitdown
 
 ### GUI Mode (Windows)
 Double-click `markitdown.exe` to launch the graphical user interface:
-1.  Queue files by clicking **Ajouter Fichier(s)**, **Ajouter Dossier**, or by **dragging and dropping** files from Windows Explorer.
-2.  Select the **Dossier de sortie** (Output Folder).
-3.  Click **Convertir**.
+1.  Queue files by clicking **Add File(s)**, **Add Folder**, or by **dragging and dropping** files from Windows Explorer.
+2.  Select the **Output folder**.
+3.  Click **Convert**.
 4.  Double-click any result in the final window to open the Markdown file in your default editor.
 
 ### CLI Mode (macOS / Linux / Windows Console)
