@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Build Windows GUI Executable
+        run: |
+          cd go
+          GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o ../markitdown.exe
+          cd ..
+
+      - name: Download & Bundle Pandoc for Windows
+        run: |
+          wget https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-windows-x86_64.zip
+          unzip pandoc-3.1.11.1-windows-x86_64.zip
+          mv pandoc-3.1.11.1/pandoc.exe .
+          zip -r markitdown-windows-amd64.zip markitdown.exe pandoc.exe LICENSE-THIRD-PARTY.md
+          rm -rf pandoc-3.1.11.1* pandoc.exe markitdown.exe
+
+      - name: Build Linux CLI Binary
+        run: |
+          cd go
+          GOOS=linux GOARCH=amd64 go build -o ../markitdown-linux-amd64
+          cd ..
+          tar -czvf markitdown-linux-amd64.tar.gz markitdown-linux-amd64 LICENSE-THIRD-PARTY.md
+          rm markitdown-linux-amd64
+
+      - name: Build macOS CLI Binaries (Intel & Apple Silicon)
+        run: |
+          cd go
+          # macOS Intel (amd64)
+          GOOS=darwin GOARCH=amd64 go build -o ../markitdown-darwin-amd64
+          # macOS Apple Silicon (arm64)
+          GOOS=darwin GOARCH=arm64 go build -o ../markitdown-darwin-arm64
+          cd ..
+          tar -czvf markitdown-darwin-amd64.tar.gz markitdown-darwin-amd64 LICENSE-THIRD-PARTY.md
+          tar -czvf markitdown-darwin-arm64.tar.gz markitdown-darwin-arm64 LICENSE-THIRD-PARTY.md
+          rm markitdown-darwin-amd64 markitdown-darwin-arm64
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            markitdown-windows-amd64.zip
+            markitdown-linux-amd64.tar.gz
+            markitdown-darwin-amd64.tar.gz
+            markitdown-darwin-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

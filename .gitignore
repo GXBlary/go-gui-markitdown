@@ -1,0 +1,12 @@
+# Local source exclusions
+mkgd/
+python/
+
+# Build artifacts
+*.exe
+go/markitdown.exe
+go/markitdown
+
+# System files
+.DS_Store
+Thumbs.db
