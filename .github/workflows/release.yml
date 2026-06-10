@@ -32,8 +32,9 @@ jobs:
           wget https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-windows-x86_64.zip
           unzip pandoc-3.1.11.1-windows-x86_64.zip
           mv pandoc-3.1.11.1/pandoc.exe .
-          zip -r markitdown-windows-amd64.zip markitdown.exe pandoc.exe LICENSE-THIRD-PARTY.md
-          rm -rf pandoc-3.1.11.1* pandoc.exe markitdown.exe
+          cp go/README-RELEASE.txt README.txt
+          zip -r markitdown-windows-amd64.zip markitdown.exe pandoc.exe LICENSE-THIRD-PARTY.md README.txt
+          rm -rf pandoc-3.1.11.1* pandoc.exe markitdown.exe README.txt
 
       - name: Build Linux CLI Binary
         run: |
