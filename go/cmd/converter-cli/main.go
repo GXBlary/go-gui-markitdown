@@ -1,5 +1,3 @@
-//go:build !windows
-
 package main
 
 import (
@@ -8,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"mkd-epub-exporters/pkg/converter"
 )
 
 func main() {
@@ -27,11 +27,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Try to initialize Pandoc (if installed on macOS/Linux)
-	if err := initPandoc(); err != nil {
+	// Try to initialize Pandoc (if installed)
+	if err := converter.InitPandoc(); err != nil {
 		fmt.Printf("Note: Pandoc not detected (%v). Formats like PPTX, RTF, EPUB, etc. will not be supported.\n", err)
-	} else {
-		fmt.Printf("Pandoc detected at: %s\n", resolvedPandocPath)
 	}
 
 	// Create output directory if it doesn't exist
@@ -41,7 +39,7 @@ func main() {
 	}
 
 	// Expand directory arguments recursively
-	allFiles, err := collectFiles(files)
+	allFiles, err := converter.CollectFiles(files)
 	if err != nil {
 		fmt.Printf("Error reading files: %v\n", err)
 		os.Exit(1)
@@ -53,7 +51,7 @@ func main() {
 
 	for i, fPath := range allFiles {
 		fmt.Printf("[%d/%d] Converting %s...\n", i+1, len(allFiles), filepath.Base(fPath))
-		mdContent, err := convertFile(fPath)
+		mdContent, err := converter.ConvertFile(fPath, *outputDir, false)
 		if err != nil {
 			fmt.Printf("  -> Failed: %v\n", err)
 			errorCount++

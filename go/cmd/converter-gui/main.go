@@ -13,6 +13,8 @@ import (
 
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+
+	"mkd-epub-exporters/pkg/converter"
 )
 
 // FileListModel provides data to the ListBox widget
@@ -41,6 +43,9 @@ type AppUI struct {
 	outputDirLabel *walk.Label
 	statusLabel    *walk.Label
 	convertButton  *walk.PushButton
+	embedImagesCB  *walk.CheckBox
+	exportMDCB     *walk.CheckBox
+	exportEpubCB   *walk.CheckBox
 
 	selectedPaths []string
 	outputDir     string
@@ -52,7 +57,7 @@ func main() {
 	runtime.LockOSThread()
 
 	// Locate the external Pandoc binary
-	if err := initPandoc(); err != nil {
+	if err := converter.InitPandoc(); err != nil {
 		log.Printf("Pandoc initialization warning: %v", err)
 	}
 
@@ -113,6 +118,28 @@ func main() {
 			ListBox{
 				AssignTo: &app.listBox,
 				Model:    app.model,
+			},
+
+			// Options Composite block
+			Composite{
+				Layout: HBox{MarginsZero: true},
+				Children: []Widget{
+					CheckBox{
+						AssignTo: &app.exportMDCB,
+						Text:     "Export to Markdown (.md)",
+						Checked:  true,
+					},
+					CheckBox{
+						AssignTo: &app.exportEpubCB,
+						Text:     "Export to EPUB (.epub)",
+						Checked:  false,
+					},
+					CheckBox{
+						AssignTo: &app.embedImagesCB,
+						Text:     "Embed images (Base64)",
+						Checked:  true,
+					},
+				},
 			},
 
 			// Output Dir selection frame
@@ -234,17 +261,25 @@ func (app *AppUI) startConversion() {
 		walk.MsgBox(app.mainWindow, "Warning", "Please select an output folder.", walk.MsgBoxIconWarning)
 		return
 	}
+	if !app.exportMDCB.Checked() && !app.exportEpubCB.Checked() {
+		walk.MsgBox(app.mainWindow, "Warning", "Please select at least one export format (Markdown or EPUB).", walk.MsgBoxIconWarning)
+		return
+	}
+
+	exportMD := app.exportMDCB.Checked()
+	exportEpub := app.exportEpubCB.Checked()
+	embedImages := app.embedImagesCB.Checked()
 
 	app.convertButton.SetEnabled(false)
 	app.statusLabel.SetText("Conversion in progress...")
 
-	go app.processFiles()
+	go app.processFiles(exportMD, exportEpub, embedImages)
 }
 
-// processFiles collects files, runs converters and writes markdown outputs
-func (app *AppUI) processFiles() {
+// processFiles collects files, runs converters and writes outputs
+func (app *AppUI) processFiles(exportMD, exportEpub, embedImages bool) {
 	// Collect all files recursively
-	allFiles, err := collectFiles(app.selectedPaths)
+	allFiles, err := converter.CollectFiles(app.selectedPaths)
 	if err != nil {
 		app.mainWindow.Synchronize(func() {
 			app.statusLabel.SetText("Error reading files.")
@@ -276,35 +311,68 @@ func (app *AppUI) processFiles() {
 		})
 
 		// Perform conversion
-		mdContent, err := convertFile(fPath)
+		mdContent, err := converter.ConvertFile(fPath, app.outputDir, embedImages)
 		if err != nil {
 			errorCount++
 			continue
 		}
 
-		// Avoid name collisions in output folder
-		outName := strings.TrimSuffix(filepath.Base(fPath), filepath.Ext(fPath)) + ".md"
-		outPath := filepath.Join(app.outputDir, outName)
+		var fileSuccess bool
 
-		counter := 1
-		for {
-			if _, err := os.Stat(outPath); os.IsNotExist(err) {
-				break
+		if exportMD {
+			// Avoid name collisions in output folder
+			outName := strings.TrimSuffix(filepath.Base(fPath), filepath.Ext(fPath)) + ".md"
+			outPath := filepath.Join(app.outputDir, outName)
+
+			counter := 1
+			for {
+				if _, err := os.Stat(outPath); os.IsNotExist(err) {
+					break
+				}
+				stem := strings.TrimSuffix(filepath.Base(fPath), filepath.Ext(fPath))
+				outPath = filepath.Join(app.outputDir, fmt.Sprintf("%s_%d.md", stem, counter))
+				counter++
 			}
-			stem := strings.TrimSuffix(filepath.Base(fPath), filepath.Ext(fPath))
-			outPath = filepath.Join(app.outputDir, fmt.Sprintf("%s_%d.md", stem, counter))
-			counter++
+
+			// Write conversion result to file
+			err = os.WriteFile(outPath, []byte(mdContent), 0644)
+			if err != nil {
+				errorCount++
+			} else {
+				fileSuccess = true
+				successPaths = append(successPaths, outPath)
+			}
 		}
 
-		// Write conversion result to file
-		err = os.WriteFile(outPath, []byte(mdContent), 0644)
-		if err != nil {
-			errorCount++
-			continue
+		if exportEpub {
+			// Avoid name collisions in output folder
+			outName := strings.TrimSuffix(filepath.Base(fPath), filepath.Ext(fPath)) + ".epub"
+			outPath := filepath.Join(app.outputDir, outName)
+
+			counter := 1
+			for {
+				if _, err := os.Stat(outPath); os.IsNotExist(err) {
+					break
+				}
+				stem := strings.TrimSuffix(filepath.Base(fPath), filepath.Ext(fPath))
+				outPath = filepath.Join(app.outputDir, fmt.Sprintf("%s_%d.epub", stem, counter))
+				counter++
+			}
+
+			// Convert Markdown content to EPUB
+			bookTitle := strings.TrimSuffix(filepath.Base(fPath), filepath.Ext(fPath))
+			err = converter.ConvertToEpub(mdContent, bookTitle, outPath)
+			if err != nil {
+				errorCount++
+			} else {
+				fileSuccess = true
+				successPaths = append(successPaths, outPath)
+			}
 		}
 
-		successCount++
-		successPaths = append(successPaths, outPath)
+		if fileSuccess {
+			successCount++
+		}
 	}
 
 	// Show results popup on UI thread when done
