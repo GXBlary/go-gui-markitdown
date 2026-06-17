@@ -6,6 +6,8 @@ python/
 *.exe
 go/markitdown.exe
 go/markitdown
+go/cmd/installer/embed/
+*.syso
 
 # System files
 .DS_Store

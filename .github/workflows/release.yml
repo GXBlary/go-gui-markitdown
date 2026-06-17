@@ -21,25 +21,45 @@ jobs:
         with:
           go-version: '1.26'
 
-      - name: Build Windows GUI Executable
+      - name: Build Windows GUI Executables & Setup Installer
         run: |
+          # Install rsrc for Windows resources compiling
+          go install github.com/akavel/rsrc@latest
+          
+          # Create embed folder
+          mkdir -p go/cmd/installer/embed
+          
+          # Build all sub-binaries for Windows
           cd go
-          GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o ../markitdown.exe
+          GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o cmd/installer/embed/markitdown.exe ./cmd/converter-gui
+          GOOS=windows GOARCH=amd64 go build -o cmd/installer/embed/markitdown-cli.exe ./cmd/converter-cli
+          GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o cmd/installer/embed/print-watcher.exe ./cmd/print-watcher
+          GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o cmd/installer/embed/markitdown-printer.exe ./cmd/printer-markdown
+          GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o cmd/installer/embed/epub-printer.exe ./cmd/printer-epub
           cd ..
-
-      - name: Download & Bundle Pandoc for Windows
-        run: |
+          
+          # Copy dlls & license to embed folder
+          cp resources/mfilemon.dll go/cmd/installer/embed/
+          cp resources/mfilemonUI.dll go/cmd/installer/embed/
+          cp LICENSE-THIRD-PARTY.md go/cmd/installer/embed/
+          
+          # Download and extract Pandoc
           wget https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-windows-x86_64.zip
           unzip pandoc-3.1.11.1-windows-x86_64.zip
-          mv pandoc-3.1.11.1/pandoc.exe .
-          cp go/README-RELEASE.txt README.txt
-          zip -r markitdown-windows-amd64.zip markitdown.exe pandoc.exe LICENSE-THIRD-PARTY.md README.txt
-          rm -rf pandoc-3.1.11.1* pandoc.exe markitdown.exe README.txt
+          mv pandoc-3.1.11.1/pandoc.exe go/cmd/installer/embed/
+          rm -rf pandoc-3.1.11.1-windows-x86_64.zip pandoc-3.1.11.1
+          
+          # Compile resources and build installer
+          cd go/cmd/installer
+          $(go env GOPATH)/bin/rsrc -manifest installer.manifest -o rsrc.syso
+          cd ../..
+          GOOS=windows GOARCH=amd64 go build -ldflags="-H=windowsgui" -o ../markitdown-setup.exe ./cmd/installer
+          cd ..
 
       - name: Build Linux CLI Binary
         run: |
           cd go
-          GOOS=linux GOARCH=amd64 go build -o ../markitdown-linux-amd64
+          GOOS=linux GOARCH=amd64 go build -o ../markitdown-linux-amd64 ./cmd/converter-cli
           cd ..
           tar -czvf markitdown-linux-amd64.tar.gz markitdown-linux-amd64 LICENSE-THIRD-PARTY.md
           rm markitdown-linux-amd64
@@ -48,9 +68,9 @@ jobs:
         run: |
           cd go
           # macOS Intel (amd64)
-          GOOS=darwin GOARCH=amd64 go build -o ../markitdown-darwin-amd64
+          GOOS=darwin GOARCH=amd64 go build -o ../markitdown-darwin-amd64 ./cmd/converter-cli
           # macOS Apple Silicon (arm64)
-          GOOS=darwin GOARCH=arm64 go build -o ../markitdown-darwin-arm64
+          GOOS=darwin GOARCH=arm64 go build -o ../markitdown-darwin-arm64 ./cmd/converter-cli
           cd ..
           tar -czvf markitdown-darwin-amd64.tar.gz markitdown-darwin-amd64 LICENSE-THIRD-PARTY.md
           tar -czvf markitdown-darwin-arm64.tar.gz markitdown-darwin-arm64 LICENSE-THIRD-PARTY.md
@@ -61,7 +81,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            markitdown-windows-amd64.zip
+            markitdown-setup.exe
             markitdown-linux-amd64.tar.gz
             markitdown-darwin-amd64.tar.gz
             markitdown-darwin-arm64.tar.gz

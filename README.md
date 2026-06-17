@@ -43,42 +43,57 @@ This project contains two main packages:
 
 ---
 
-## How to Compile & Install
+## Installation
 
-### Requirements
+### 🚀 Windows Installation (Recommended for most users)
+
+To install MarkItDown and/or the Virtual Printers on Windows without compiling from source:
+1. Download **`markitdown-setup.exe`** from the [GitHub Releases](https://github.com/gxblary/mkd-epub-exporters/releases) page.
+2. Run the installer.
+3. Choose the components you want to install:
+   * **MarkItDown Converter**: The standalone application (`markitdown.exe` GUI and `markitdown-cli.exe` CLI).
+   * **Virtual Printers**: The "Print to Markdown" and "Print to EPUB" virtual printers.
+4. Follow the setup wizard and click **Install**.
+
+---
+
+### 💻 Advanced Installation & Development (For Power Users / Developers)
+
+#### Requirements
 *   **Go** (version 1.22 or higher)
-*   **Windows (for GUI and Printer common controls):**
-    Ensure you have `rsrc` installed to compile Windows resources:
+*   **Windows (to compile GUI and resource manifests):**
+    Ensure you have `rsrc` installed:
     ```bash
     go install github.com/akavel/rsrc@latest
     ```
 
-### Compilation of GUI & CLI Desktop App
+#### Building the Unified Installer from Source
+To compile all binaries, download external dependencies, and build the unified setup wizard, run from the repository root folder:
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process
+.\build_installer.ps1
+```
+This generates `markitdown-setup.exe` in the root folder.
 
+#### Compiling the GUI & CLI Separately
 Run from the `go/` folder:
 ```bash
-# GUI Mode
-cd go
+# GUI Mode (Windows)
 go build -ldflags="-H=windowsgui" -o ../markitdown.exe ./cmd/converter-gui
 
-# CLI Mode
+# CLI Mode (Cross-platform)
 go build -o ../markitdown-cli.exe ./cmd/converter-cli
 ```
 
-### Installation of Virtual Printers
-
-To compile and install the virtual printers:
+#### Manual Installation of Virtual Printers
+If you want to manually install the virtual printers without using the GUI installer:
 1. Open **PowerShell as Administrator**.
-2. Run the unified installer:
+2. Run the installation script from the root folder:
    ```powershell
    Set-ExecutionPolicy Bypass -Scope Process
    .\install.ps1
    ```
-This script will:
-* Compile the print-watcher and virtual printer binaries.
-* Copy files to `C:\Program Files\MkdEpubPrinters\`.
-* Register the port monitors and create the local virtual printers ("Print to Markdown" and "Print to EPUB").
-* Register `print-watcher.exe` to run on startup for all users.
+This script will compile `print-watcher.exe`, `markitdown-printer.exe`, and `epub-printer.exe` and configure the physical port mappings on your system.
 
 ---
 
