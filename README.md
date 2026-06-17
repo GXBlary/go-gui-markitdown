@@ -39,7 +39,8 @@ This project contains two main packages:
         *   `installer-markdown`/`installer-epub`: Double-clickable UAC installer wrappers.
 *   [**`python/`**](./python): Original python converter application.
 *   [**`resources/`**](./resources): Port monitors (`mfilemon.dll`), python executables, and print drivers.
-*   **`install.ps1`**: Unified virtual printer installation script.
+*   [**`windows/`**](./windows): Contains Windows-specific setup scripts (build script and manual virtual printer installer).
+*   [**`macos/`**](./macos): Contains macOS-specific print service scripts.
 
 ---
 
@@ -88,7 +89,7 @@ To install MarkItDown and the Virtual Printers on macOS:
 To compile all binaries, download external dependencies, and build the unified setup wizard, run from the repository root folder:
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process
-.\build_installer.ps1
+.\windows\build_installer.ps1
 ```
 This generates `markitdown-setup.exe` in the root folder.
 
@@ -108,7 +109,7 @@ If you want to manually install the virtual printers without using the GUI insta
 2. Run the installation script from the root folder:
    ```powershell
    Set-ExecutionPolicy Bypass -Scope Process
-   .\install.ps1
+   .\windows\install.ps1
    ```
 This script will compile `print-watcher.exe`, `markitdown-printer.exe`, and `epub-printer.exe` and configure the physical port mappings on your system.
 

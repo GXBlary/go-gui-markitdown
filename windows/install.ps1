@@ -1,5 +1,6 @@
 # Unified Virtual Printers Installer for Markdown & EPUB
 # MUST BE RUN AS ADMINISTRATOR
+# Run from repository root as: .\windows\install.ps1
 
 # Check for admin rights
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -8,7 +9,7 @@ if (-not $isAdmin) {
     Exit 1
 }
 
-$RootDir = $PSScriptRoot
+$RootDir = Split-Path -Parent $PSScriptRoot
 $InstallDir = "C:\Program Files\MkdEpubPrinters"
 $WatcherExe = Join-Path $InstallDir "print-watcher.exe"
 $MkdPrinterExe = Join-Path $InstallDir "markitdown-printer.exe"

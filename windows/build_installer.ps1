@@ -1,7 +1,7 @@
 # PowerShell Script to Build MarkItDown Unified Installer
-# Run from repository root
+# Run from repository root as: .\windows\build_installer.ps1
 
-$RootDir = $PSScriptRoot
+$RootDir = Split-Path -Parent $PSScriptRoot
 $EmbedDir = Join-Path $RootDir "go\cmd\installer\embed"
 
 Write-Host "=== Starting Unified Installer Build Process ===" -ForegroundColor Cyan
